@@ -5,7 +5,7 @@ Official implementation of "VDEGaussian: Video Diffusion Enhanced 4D Gaussian Sp
 ### [Project](https://pulangk97.github.io/VDEGaussian-Project/) | [Paper](https://www.arxiv.org/pdf/2508.02129)
 
 ### Pipeline
-
+![Pipeline](./assets/method2.png)
 ### Installation
 #### Environments
 
