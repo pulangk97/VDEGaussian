@@ -44,8 +44,11 @@ pip install -r requirements_dc.txt
 
 #### Stage 1 (Test Time Adaptation)
 ```
-
+bash scene_train.sh
 ```
 
 #### Stage 2 (4DGS Training)
 
+```
+bash pvg_train.sh
+```
