@@ -34,10 +34,9 @@ cp "$original_dc_config" "$temp_dc_config" || exit 1
 cp "$original_base_yaml" "$temp_base_yaml" || exit 1
 cp "$original_waymo_yaml" "$temp_waymo_yaml" || exit 1
 
-# 修改临时配置文件
+
 sed -i "s|\(data_dir: \)\"./data/waymo_scenes/16\"|\1\"$base_dir/data/waymo_scenes/$scene_id\"|g" "$temp_dc_config" || exit 1
 
-# 执行训练脚本
 if ! bash "$trainer_sh" "$scene_id" "$temp_dc_config" "$current_port" "$base_dir"; then
     echo "Error: Failed to execute training script $trainer_sh"
     exit 1
