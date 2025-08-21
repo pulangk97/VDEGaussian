@@ -28,7 +28,9 @@ pip install ./diff-gaussian-rasterization
 git clone https://github.com/NVlabs/nvdiffrast
 pip install ./nvdiffrast
 
+pip install -r requirements_dc.txt
 
 ```
+### Getting Start
 
 
