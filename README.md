@@ -37,7 +37,13 @@ pip install -r requirements_dc.txt
 #### Download Checkpoints
 
 1. Download the checkpoint of DynamiCrafter for [Interpolation](https://huggingface.co/Doubiiu/DynamiCrafter_512_Interp/blob/main/model.ckpt). 
-2. Put model.ckpt into ./checkpoints/dynamicrafter_512_interp_v1/
+2. Put `model.ckpt` into `./checkpoints/dynamicrafter_512_interp_v1/`
+3. Download `open_clip_pytorch_model.bin` and put it into `./submodules/DynamiCrafter/pretrained/`
+### Datasets
+#### Waymo Open Datasets
+1. Download raw scenes used in original paper (segment id: `102319, 103913, 106250, 109636, 121618, and 225932`) from [Waymo](https://waymo.com/open/)
+2. Process the raw scenes following [PVG](https://github.com/fudan-zvg/PVG) 
+3. Put the processed scenes into `./data/waymo_scenes`
 
 
 ### Getting Start
