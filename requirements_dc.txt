@@ -1,0 +1,17 @@
+decord
+einops
+numpy
+omegaconf
+pandas
+pytorch_lightning
+PyYAML
+setuptools
+transformers
+moviepy
+av
+xformers
+gradio
+timm
+scikit-learn 
+open_clip_torch
+kornia
