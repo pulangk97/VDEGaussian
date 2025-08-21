@@ -1,0 +1,15 @@
+torch
+torchvision
+tqdm
+imageio
+imageio[ffmpeg]
+kornia
+trimesh
+Pillow
+ninja
+omegaconf
+plyfile
+opencv_python
+opencv_contrib_python
+tensorboardX
+matplotlib
