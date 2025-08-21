@@ -2,11 +2,12 @@
 
 Official implementation of "VDEGaussian: Video Diffusion Enhanced 4D Gaussian Splatting for Dynamic Urban Scenes Modeling".
 
-### [Project](https://pulangk97.github.io/VDEGaussian-Project/) [Paper](https://www.arxiv.org/pdf/2508.02129)
+### [Project](https://pulangk97.github.io/VDEGaussian-Project/) | [Paper](https://www.arxiv.org/pdf/2508.02129)
 
 ### Pipeline
 
 ### Installation
+#### Environments
 
 ```
 # Make a conda environment.
@@ -28,9 +29,23 @@ pip install ./diff-gaussian-rasterization
 git clone https://github.com/NVlabs/nvdiffrast
 pip install ./nvdiffrast
 
+## Install requirements for DynamiCrafter
 pip install -r requirements_dc.txt
 
+
 ```
+#### Download Checkpoints
+
+1. Download the checkpoint of DynamiCrafter for [Interpolation](https://huggingface.co/Doubiiu/DynamiCrafter_512_Interp/blob/main/model.ckpt). 
+2. Put model.ckpt into ./checkpoints/dynamicrafter_512_interp_v1/
+
+
 ### Getting Start
 
+#### Stage 1 (Test Time Adaptation)
+```
+
+```
+
+#### Stage 2 (4DGS Training)
 
