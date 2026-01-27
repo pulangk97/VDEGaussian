@@ -3,7 +3,7 @@
 
 > [**Periodic Vibration Gaussian: Dynamic Urban Scene Reconstruction and Real-time Rendering**](https://arxiv.org/abs/2311.18561),            
 > Yurui Chen, [Chun Gu](https://sulvxiangxin.github.io/), Junzhe Jiang, [Xiatian Zhu](https://surrey-uplab.github.io/), [Li Zhang](https://lzrobots.github.io)  
-> **Arxiv preprint**
+> **IJCV 2026**
 
 **Official implementation of "Periodic Vibration Gaussian: 
 Dynamic Urban Scene Reconstruction and Real-time Rendering".** 
