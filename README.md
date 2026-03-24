@@ -62,7 +62,7 @@ bash waymo_train.sh
 ```
 
 #### Kitti
-
+Change the config data to KITTI mode
 ##### Stage 1 (Test Time Adaptation)
 ```
 bash kitti_dc_train.sh
