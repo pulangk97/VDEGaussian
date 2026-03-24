@@ -60,7 +60,7 @@ model:
         temporal_length: 16
         addition_attention: true
         image_cross_attention: true
-        default_fs: 10   # stride=1时fs=10，stride=5时fs=2；训练时动态传入，此为fallback默认值
+        default_fs: 10   
         fs_condition: true
       
 
@@ -134,7 +134,6 @@ data:
         spatial_transform: resize_center_crop
         cam_num: 1                         
         scene_ids: ["0001", "0002", "0006"]  
-        # ── 测试帧划分（与 kittimot_loader.py 完全一致）──────────────────────
         block_start: 8
         block_size: 5
         block_interval: 10 
@@ -148,7 +147,7 @@ data:
 #     train:
 #       target: lvdm.data.waymo.Waymo
 #       params:
-#         data_dir: "./data/waymo_scenes"  # 父目录，包含所有场景子文件夹
+#         data_dir: "./data/waymo_scenes"  
 #         meta_path: ""
 #         video_length: 3
 #         frame_stride: 2   
@@ -172,7 +171,7 @@ lightning:
   trainer:
     benchmark: True
     accumulate_grad_batches: 2
-    max_steps: 500  # 32场景合并训练，适当增大步数
+    max_steps: 500  
     log_every_n_steps: 50
     # val
     val_check_interval: 0.5
