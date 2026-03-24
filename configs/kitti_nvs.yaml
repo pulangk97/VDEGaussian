@@ -6,7 +6,7 @@ scene_type: "KittiMot"
 start_frame: 380
 end_frame: 431
 num_pts: 1000000
-cam_num: 3
+cam_num: 2             
 resolution_scales: [1, 2, 4, 8]
 eval: true
 t_init: 0.006
@@ -32,6 +32,6 @@ lidar_decay: 0.3
 lambda_v_reg: 0.001
 lambda_t_reg: 0.01
 
-block_start: 8    # 第一个测试块从第9帧开始
-block_interval: 10 # 每隔10帧放一个块
-block_size: 5   # 每块连续测试帧数
+block_start: 8          
+block_interval: 10      
+block_size: 5           

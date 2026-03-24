@@ -1,8 +1,4 @@
 #!/bin/bash
-################################################################################
-# train_unified_dc.sh
-# 所有场景数据合并，8 张卡 DDP 训练一个统一的 DynamiCrafter 模型
-################################################################################
 
 current_dir=$(pwd)
 NUM_GPUS=8
@@ -22,8 +18,6 @@ if [ ! -f "${ORIGINAL_CONFIG}" ]; then
     exit 1
 fi
 
-# 检查 data 目录：优先用 ./data/waymo_scenes（多场景父目录）
-# 若不存在则报错
 DATA_DIR="${current_dir}/data/waymo_scenes"
 if [ ! -d "${DATA_DIR}" ]; then
     echo "Error: Data directory not found at ${DATA_DIR}"
@@ -31,19 +25,15 @@ if [ ! -d "${DATA_DIR}" ]; then
 fi
 echo "Using data directory: ${DATA_DIR}"
 
-# 创建临时 config，将 data_dir 替换为所有场景父目录（与 scene_adaptation.sh 同样的 sed 方式）
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT INT TERM
 TEMP_CONFIG="${TEMP_DIR}/config_interp_adapt.yaml"
 cp "${ORIGINAL_CONFIG}" "${TEMP_CONFIG}"
 
-# 替换 data_dir（兼容原来的 ./data/waymo_scenes/16 或任何单场景路径）
 sed -i "s|data_dir: \"[^\"]*\"|data_dir: \"${DATA_DIR}\"|g" "${TEMP_CONFIG}"
 
-# 替换 max_steps（原始 config 里的值可能是单场景的 500，需覆盖为合并训练的步数）
 sed -i "s|max_steps:.*|max_steps: ${MAX_STEPS}  # set by train_unified_dc.sh|g" "${TEMP_CONFIG}"
 
-# 验证替换结果
 echo "data_dir in config:  $(grep 'data_dir' ${TEMP_CONFIG})"
 echo "max_steps in config: $(grep 'max_steps' ${TEMP_CONFIG})"
 

@@ -51,7 +51,6 @@ class Scene:
         self.all_cameras = {}
 
         scene_info = sceneLoadTypeCallbacks[args.scene_type](args)
-        self._scene_type = args.scene_type  # 供 getPseudoCameras 判断 CAM_STRIDE
         
         self.time_interval = args.frame_interval
         self.gaussians.time_duration = scene_info.time_duration
@@ -219,12 +218,8 @@ class Scene:
         return interp_cam
 
     def getPseudoCameras(self, scale, num_interpolate = 16, cam_num=1, total_cam=5):
-        # Waymo: uid = frame_idx * 5 + cam_j  → 帧索引 = colmap_id // 5, CAM_STRIDE=5
-        # KITTI: uid = frame_idx * 2 + cam_j  → 帧索引 = colmap_id // 2, CAM_STRIDE=2
-        #        cam_infos排列: [cam02_frame0..N-1, cam03_frame0..N-1]
-        #        cam_j=0为cam02，cam_j=1为cam03，colmap_id已在loader中设置
-        scene_type = getattr(self, '_scene_type', 'Waymo')
-        CAM_STRIDE = 2 if scene_type == 'KittiMot' else 5
+        # colmap_id 硬编码为 idx * 5 + j，帧索引换算固定用 5
+        CAM_STRIDE = 5
 
         resolution_scale = scale
 
@@ -292,7 +287,7 @@ class Scene:
             from torchvision.utils import save_image
             os.makedirs(save_dir, exist_ok=True)
 
-        pseudoCameras = self.getPseudoCameras(scale=16, num_interpolate=num_interpolate, cam_num=cam_num)
+        pseudoCameras = self.getPseudoCameras(scale=max(self.resolution_scales), num_interpolate=num_interpolate, cam_num=cam_num)
         batch_images = []
         batch_latents = []
         n=0
@@ -304,13 +299,9 @@ class Scene:
                 input_batch = torch.concat([torch.concat([cam["leftcam"].image_full_scale[None,...].to(cam["leftcam"].data_device)]*int(np.floor(num_interpolate/2)), dim=0), torch.concat([cam["rightcam"].image_full_scale[None,...].to(cam["rightcam"].data_device)]*int(np.ceil(num_interpolate/2)), dim=0)], dim=0)
             input_batch = input_batch.permute(1,0,2,3)[None,...]
 
-            # 左右条件帧的真实帧索引间隔 = right_frame_idx - left_frame_idx
-            # 例：block=[8,9,10,11]，left=7，right=12，间隔=5，fs=10//5=2
-            scene_type = getattr(self, '_scene_type', 'Waymo')
-            _stride = 2 if scene_type == 'KittiMot' else 5
-            left_frame_idx  = cam["leftcam"].colmap_id  // _stride
-            right_frame_idx = cam["rightcam"].colmap_id // _stride
-            frame_gap = right_frame_idx - left_frame_idx  # 实际帧间隔
+            left_frame_idx  = cam["leftcam"].colmap_id  // 5
+            right_frame_idx = cam["rightcam"].colmap_id // 5
+            frame_gap = right_frame_idx - left_frame_idx  
             infer_fs = 8
             batch_image, batch_latent = model.inference(input_batch.to(model.device), fs=infer_fs)
 

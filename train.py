@@ -82,7 +82,7 @@ def training(args):
     learnable_t = True
     if learnable_t == True:
         
-        num_pseudo = len(list(range(len(scene.getPseudoCameras(scale=16, num_interpolate=n_iterp, cam_num=args.cam_num)))))
+        num_pseudo = len(list(range(len(scene.getPseudoCameras(scale=max(scene.resolution_scales), num_interpolate=n_iterp, cam_num=args.cam_num)))))
        
         t_bias =  torch.nn.Parameter(torch.zeros((num_pseudo, n_iterp-2), device=torch.device("cuda")).requires_grad_(True))
 
@@ -92,7 +92,7 @@ def training(args):
         ]
         t_optimizer = torch.optim.Adam(l_w, lr=0.001, eps=1e-15)
     else:
-        num_pseudo = len(list(range(len(scene.getPseudoCameras(scale=16,num_interpolate=n_iterp, cam_num=args.cam_num)))))
+        num_pseudo = len(list(range(len(scene.getPseudoCameras(scale=max(scene.resolution_scales),num_interpolate=n_iterp, cam_num=args.cam_num)))))
         t_bias = torch.zeros((num_pseudo, n_iterp-2), device=torch.device("cuda")).requires_grad_(False) 
 
         l_w = [

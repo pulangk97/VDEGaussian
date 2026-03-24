@@ -116,29 +116,6 @@ model:
         video_length: 16
 
 
-# data:
-#   target: utils_data.DataModuleFromConfig
-#   params:
-#     batch_size: 2
-#     num_workers: 12
-#     wrap: false
-#     train:
-#       target: lvdm.data.kitti.Kitti     
-#       params:
-#         data_dir: "./data/kitti_mot/training/image_02"  
-#         meta_path: ""
-#         video_length: 3
-#         frame_stride: 1
-#         load_raw_resolution: true
-#         resolution: [320, 512]
-#         spatial_transform: resize_center_crop
-#         cam_num: 1                         
-#         scene_ids: ["0001", "0002", "0006"]  
-#         # ── 测试帧划分（与 kittimot_loader.py 完全一致）──────────────────────
-#         block_start: 8
-#         block_size: 5
-#         block_interval: 10 
-
 data:
   target: utils_data.DataModuleFromConfig
   params:
@@ -146,19 +123,42 @@ data:
     num_workers: 12
     wrap: false
     train:
-      target: lvdm.data.waymo.Waymo
+      target: lvdm.data.kitti.Kitti     
       params:
-        data_dir: "./data/waymo_scenes"  # 父目录，包含所有场景子文件夹
+        data_dir: "./data/kitti_mot/training/image_02"  
         meta_path: ""
         video_length: 3
-        frame_stride: 2   
+        frame_stride: 1
         load_raw_resolution: true
-        resolution: [320, 512] # 256 256
+        resolution: [320, 512]
         spatial_transform: resize_center_crop
-        cam_num: 1
-        block_start: 8    
+        cam_num: 1                         
+        scene_ids: ["0001", "0002", "0006"]  
+        # ── 测试帧划分（与 kittimot_loader.py 完全一致）──────────────────────
+        block_start: 8
         block_size: 5
-        block_interval: 10
+        block_interval: 10 
+
+# data:
+#   target: utils_data.DataModuleFromConfig
+#   params:
+#     batch_size: 2
+#     num_workers: 12
+#     wrap: false
+#     train:
+#       target: lvdm.data.waymo.Waymo
+#       params:
+#         data_dir: "./data/waymo_scenes"  # 父目录，包含所有场景子文件夹
+#         meta_path: ""
+#         video_length: 3
+#         frame_stride: 2   
+#         load_raw_resolution: true
+#         resolution: [320, 512] # 256 256
+#         spatial_transform: resize_center_crop
+#         cam_num: 1
+#         block_start: 8    
+#         block_size: 5
+#         block_interval: 10
         
 lightning:
   precision: 16

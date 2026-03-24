@@ -41,22 +41,37 @@ pip install -r requirements_dc.txt
 3. Download `open_clip_pytorch_model.bin` and put it into `./submodules/DynamiCrafter/pretrained/`.
 ### Datasets
 #### Waymo Open Datasets
-1. Download raw scenes used in original paper (segment id: `102319, 103913, 106250, 109636, 121618, and 225932`) from [Waymo](https://waymo.com/open/).
+1. Download raw scenes used in original paper (Dynamic-32: 16, 21, 22, 25, 31, 34, 35, 49, 53, 80, 84, 86, 89, 94, 96, 102, 111, 222, 323, 323, 382, 382, 402, 402, 427, 427, 438, 438, 546, 581, 592, 620, 640, 700, 754, 795, 796) from [Waymo](https://waymo.com/open/).The dataset ID information can be found in dynamic32.txt.
 2. Process the raw scenes following [PVG](https://github.com/fudan-zvg/PVG).
 3. Put the processed scenes into `./data/waymo_scenes`.
 
 
 ### Getting Start
 
-#### Stage 1 (Test Time Adaptation)
+#### Waymo
+
+##### Stage 1 (Test Time Adaptation)
 ```
-bash scene_train.sh
+bash waymo_dc_train.sh
 ```
 
-#### Stage 2 (4DGS Training)
+##### Stage 2 (4DGS Training)
 
 ```
-bash pvg_train.sh
+bash waymo_train.sh
+```
+
+#### Kitti
+
+##### Stage 1 (Test Time Adaptation)
+```
+bash kitti_dc_train.sh
+```
+
+##### Stage 2 (4DGS Training)
+
+```
+bash kitti_train.sh
 ```
 
 ### Citation

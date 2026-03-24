@@ -9,7 +9,6 @@ base_dir=$4
 save_root="$base_dir/checkpoints/waymo_adapt_testhold_$scene_id"
 mkdir -p $save_root/${name}_interp
 
-# 移除了 CUDA_VISIBLE_DEVICES=0，直接使用环境变量
 python3 -m torch.distributed.launch \
 --nproc_per_node=1 --nnodes=1 --master_addr=127.0.0.1 --master_port=$master_port --node_rank=0 \
 ./submodules/DynamiCrafter/main/trainer.py \

@@ -574,7 +574,9 @@ def readKittiMotInfo(args):
         W, H = im_data.size
         image = np.array(im_data) / 255.
 
-        sky_mask = cv2.imread(sky_path)
+        # Fix 1: IMREAD_GRAYSCALE → (H,W) 单通道，与 loadCam 的 [:,:,None] 期望一致
+        # cv2.imread 默认读 BGR (H,W,3)，[:,:,None] 后变 (H,W,1,3) 四维，cv2.resize 崩溃
+        sky_mask = cv2.imread(sky_path, cv2.IMREAD_GRAYSCALE)
 
         timestamp = time_duration[0] + (time_duration[1] - time_duration[0]) * (idx % (len(c2ws) // 2)) / (len(c2ws) // 2 - 1)
         R = np.transpose(w2c[:3, :3])  # R is stored transposed due to 'glm' in CUDA code
@@ -590,9 +592,9 @@ def readKittiMotInfo(args):
         point_xyz = points[idx % num_frame]
         point_camera = (np.pad(point_xyz, ((0, 0), (0, 1)), constant_values=1)@ transform_matrix.T @ w2c.T)[:, :3]*scale_factor
 
-        # colmap_id：KITTI 2路相机，stride=2（与 Waymo uid=idx*5+j 的做法完全一致）
-        # cam02: frame_idx * 2 + 0；cam03: frame_idx * 2 + 1
-        # CameraInfo 是 namedtuple，不支持事后赋值，必须在构造时通过 uid 传入
+        # Fix 2: CameraInfo 是 namedtuple，不能事后赋值，colmap_id 提前算好作为 uid 传入
+        # Fix 3: image_name 应存纯帧 ID（如 "000186"），不能存完整路径
+        #        line 571 已算好 image_name = os.path.basename(image_path)[:-4]，此处直接用
         CAM_STRIDE_KITTI = 2
         frame_idx = idx % num_frame
         cam_idx   = idx // num_frame   # 0=cam02, 1=cam03
@@ -600,7 +602,7 @@ def readKittiMotInfo(args):
 
         cam_infos.append(CameraInfo(uid=colmap_id, R=R, T=T,
                                     image=image,
-                                    image_path=image_filenames[idx], image_name=image_filenames[idx],
+                                    image_path=image_filenames[idx], image_name=image_name,
                                     width=W, height=H, timestamp=timestamp,
                                     fx=focal_X, fy=focal_Y, cx=cx, cy=cy, sky_mask=sky_mask,
                                     pointcloud_camera=point_camera))

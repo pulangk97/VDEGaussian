@@ -5,7 +5,6 @@ current_port=$2
 current_dir=$3
 gpu_id=$4   # 新增参数
 
-# 设置 GPU 环境变量，确保后续命令使用正确的 GPU
 export CUDA_VISIBLE_DEVICES=${gpu_id}
 
 base_dir=$current_dir

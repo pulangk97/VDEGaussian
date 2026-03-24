@@ -6,7 +6,6 @@ current_dir=$2
 base_dir=$current_dir
 original_waymo_yaml="$base_dir/configs/waymo_nvs.yaml"
 
-# ── 统一 DynamiCrafter checkpoint（改为统一训练后所有场景共用）──
 checkpoints_dir="$base_dir/checkpoints/unified_dc/training_512_v1.0_interp/checkpoints"
 if [ ! -d "$checkpoints_dir" ]; then
     echo "Error: Unified DC checkpoint not found: $checkpoints_dir"
