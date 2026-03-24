@@ -28,7 +28,8 @@ EPS = 1e-5
 def evaluation(iteration, scene : Scene, renderFunc, renderArgs, env_map=None):
     from lpipsPyTorch import lpips
 
-    scale = scene.resolution_scales[0]
+    scale = 4 #scale = scene.resolution_scales[0]
+    # print(scale)
     if "kitti" in args.model_path:
         # follow NSG: https://github.com/princeton-computational-imaging/neural-scene-graphs/blob/8d3d9ce9064ded8231a1374c3866f004a4a281f8/data_loader/load_kitti.py#L766
         num = len(scene.getTrainCameras())//2
@@ -66,8 +67,25 @@ def evaluation(iteration, scene : Scene, renderFunc, renderArgs, env_map=None):
                 depth = visualize_depth(depth)
                 alpha = alpha.repeat(3, 1, 1)
 
-                grid = [gt_image, image, alpha, depth]
-                grid = make_grid(grid, nrow=2)
+
+                if_pts_depth  = True
+                if viewpoint.pts_depth is not None and if_pts_depth == True:
+                    pts_depth = viewpoint.pts_depth
+
+                    sky_depth = 900
+                    pts_depth = pts_depth / alpha.clamp_min(EPS)
+                    # if env_map is not None:
+                    #     if args.depth_blend_mode == 0:  # harmonic mean
+                    #         pts_depth = 1 / (alpha / pts_depth.clamp_min(EPS) + (1 - alpha) / sky_depth).clamp_min(EPS)
+                    #     elif args.depth_blend_mode == 1:
+                    #         pts_depth = alpha * pts_depth + (1 - alpha) * sky_depth
+                    pts_depth_vis = visualize_depth(pts_depth)
+                    # grid = [gt_image, image, alpha, depth, pts_depth_vis]
+                    grid = [pts_depth_vis]
+                    grid = make_grid(grid, nrow=1, padding = 0)
+                else:
+                    grid = [gt_image, image, alpha, depth]
+                    grid = make_grid(grid, nrow=2)
 
                 save_image(grid, os.path.join(outdir, f"{viewpoint.colmap_id:03d}.png"))
 
@@ -97,7 +115,7 @@ if __name__ == "__main__":
     second_conf = OmegaConf.load(args.config)
     cli_conf = OmegaConf.from_cli()
     args = OmegaConf.merge(base_conf, second_conf, cli_conf)
-    args.resolution_scales = args.resolution_scales[:1]
+    # args.resolution_scales = args.resolution_scales[:1]
     print(args)
     
     seed_everything(args.seed)

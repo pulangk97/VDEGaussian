@@ -30,7 +30,10 @@ fix_radius: 0.0
 time_duration: [-0.5, 0.5]
 num_pts: 100000
 frame_interval: 0.02
-testhold: 4  # NVS
+#testhold: 4  # NVS
+block_start: 8     # 第一个测试块从第9帧开始
+block_interval: 10 # 每隔10帧放一个块
+block_size: 5     # 每块连续测试帧数
 env_map_res: 1024
 separate_scaling_t: 0.1
 neg_fov: true
@@ -89,3 +92,6 @@ lambda_v_reg: 0.0
 lambda_lidar: 0.1
 lidar_decay: 1.0
 lambda_v_smooth: 0.0
+
+lambda_vd_smooth: 1 
+vd_loss_type: "img" 

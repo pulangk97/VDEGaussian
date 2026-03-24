@@ -87,3 +87,40 @@ def fov2focal(fov, pixels):
 
 def focal2fov(focal, pixels):
     return 2*math.atan(pixels/(2*focal))
+
+def get_rays(H, W, K, R, T, perturb=False):
+    # calculate the camera origin
+    rays_o = -np.dot(R.T, T).ravel()
+    # calculate the world coodinates of pixels
+    i, j = np.meshgrid(np.arange(W, dtype=np.float32), np.arange(H, dtype=np.float32), indexing="xy")
+
+    if perturb:
+        perturb_i = np.random.rand(H, W)
+        perturb_j = np.random.rand(H, W)
+        xy1 = np.stack([i + perturb_i, j + perturb_j, np.ones_like(i)], axis=2)
+    else:
+        xy1 = np.stack([i + 0.5, j + 0.5, np.ones_like(i)], axis=2)
+
+    pixel_camera = np.dot(xy1, np.linalg.inv(K).T)
+    pixel_world = np.dot(pixel_camera - T.ravel(), R)
+    # calculate the ray direction
+    rays_d = pixel_world - rays_o[None, None]
+    rays_d = rays_d / np.linalg.norm(rays_d, axis=2, keepdims=True)
+    rays_o = np.broadcast_to(rays_o, rays_d.shape)
+    return rays_o, rays_d
+
+
+def sphere_intersection(rays_o, rays_d, center, radius):
+    rays_d = rays_d / np.linalg.norm(rays_d, axis=-1, keepdims=True)
+    b = np.sum((rays_o - center) * rays_d, axis=-1, keepdims=True)
+    c = np.sum((rays_o - center) * (rays_o - center), axis=-1, keepdims=True) - radius**2
+
+    nears = -b - np.sqrt(b**2 - c)
+    fars = -b + np.sqrt(b**2 - c)
+
+    nears = np.nan_to_num(nears, nan=0.0)
+    fars = np.nan_to_num(fars, nan=1e3)
+
+    p_sphere = rays_o + fars * rays_d
+
+    return p_sphere

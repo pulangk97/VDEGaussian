@@ -4,7 +4,6 @@ from utils.graphics_utils import getWorld2View2
 from scene.gaussian_model import BasicPointCloud
 from plyfile import PlyData, PlyElement
 
-
 class CameraInfo(NamedTuple):
     uid: int
     R: np.array
@@ -23,15 +22,22 @@ class CameraInfo(NamedTuple):
     cx: float = None
     cy: float = None
     pointcloud_camera: np.array = None
+    metadata: dict = dict()
+    mask: np.array = None
+    acc_mask: np.array = None
 
 class SceneInfo(NamedTuple):
     point_cloud: BasicPointCloud
     train_cameras: list
     test_cameras: list
+    all_cameras: list
     nerf_normalization: dict
     ply_path: str
     time_interval: float = 0.02
     time_duration: list = [-0.5, 0.5]
+    metadata: dict = dict()
+    novel_view_cameras: list = None
+
 
 def getNerfppNorm(cam_info):
     def get_center_and_diag(cam_centers):

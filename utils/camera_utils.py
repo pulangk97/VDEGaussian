@@ -35,6 +35,7 @@ def loadCam(args, id, cam_info: CameraInfo, resolution_scale):
         scale = float(global_down) * float(resolution_scale)
         resolution = (int(orig_w / scale), int(orig_h / scale))
 
+
     if cam_info.cx:
         cx = cam_info.cx / scale
         cy = cam_info.cy / scale
@@ -47,15 +48,20 @@ def loadCam(args, id, cam_info: CameraInfo, resolution_scale):
         fx = None
     
     if cam_info.image.shape[:2] != resolution[::-1]:
+
         image_rgb = cv2.resize(cam_info.image, resolution)
     else:
         image_rgb = cam_info.image
+
+    image_full_scale = torch.tensor(cam_info.image).float().permute(2, 0, 1)
+
     image_rgb = torch.from_numpy(image_rgb).float().permute(2, 0, 1)
     gt_image = image_rgb[:3, ...]
 
     if cam_info.sky_mask is not None:
         if cam_info.sky_mask.shape[:2] != resolution[::-1]:
-            sky_mask = cv2.resize(cam_info.sky_mask, resolution)
+
+            sky_mask = cv2.resize(cam_info.sky_mask[:,:,None], resolution)
         else:
             sky_mask = cam_info.sky_mask
         if len(sky_mask.shape) == 2:
@@ -64,6 +70,7 @@ def loadCam(args, id, cam_info: CameraInfo, resolution_scale):
     else:
         sky_mask = None
 
+    ### for waymo use the following code
     if cam_info.pointcloud_camera is not None:
         h, w = gt_image.shape[1:]
         K = np.eye(3)
@@ -113,8 +120,8 @@ def loadCam(args, id, cam_info: CameraInfo, resolution_scale):
         image_path=cam_info.image_path,
         pts_depth=pts_depth,
         sky_mask=sky_mask,
+        image_full_scale=image_full_scale
     )
-
 
 def cameraList_from_camInfos(cam_infos, resolution_scale, args):
     camera_list = []

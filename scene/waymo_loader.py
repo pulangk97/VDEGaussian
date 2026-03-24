@@ -5,6 +5,14 @@ from PIL import Image
 from scene.scene_utils import CameraInfo, SceneInfo, getNerfppNorm, fetchPly, storePly
 from utils.graphics_utils import BasicPointCloud
 
+from utils.graphics_utils import focal2fov, BasicPointCloud, fov2focal
+from utils.data_utils import get_val_frames
+
+from tqdm import tqdm
+
+import cv2
+import shutil
+
 
 def pad_poses(p):
     """Pad [..., 3, 4] pose matrices with a homogeneous bottom row [0,0,0,1]."""
@@ -69,6 +77,15 @@ def readWaymoInfo(args):
     points = []
     points_time = []
 
+    selected_frames = args.selected_frames
+    if args.debug:
+        selected_frames = [0, 0]
+
+    frame_num = selected_frames[1] - selected_frames[0]
+    start_frame = selected_frames[0]
+    end_frame = selected_frames[1]
+    car_list = car_list[start_frame:end_frame]
+
     frame_num = len(car_list)
     if args.frame_interval > 0:
         time_duration = [-args.frame_interval*(frame_num-1)/2,args.frame_interval*(frame_num-1)/2]
@@ -93,7 +110,7 @@ def readWaymoInfo(args):
         image_paths = []
         HWs = []
         for subdir in ['image_0', 'image_1', 'image_2', 'image_3', 'image_4'][:args.cam_num]:
-            image_path = os.path.join(args.source_path, subdir, car_id + '.png')
+            image_path = os.path.join(args.source_path, subdir, car_id + '.jpg')
             im_data = Image.open(image_path)
             W, H = im_data.size
             image = np.array(im_data) / 255.
@@ -103,7 +120,7 @@ def readWaymoInfo(args):
 
         sky_masks = []
         for subdir in ['sky_0', 'sky_1', 'sky_2', 'sky_3', 'sky_4'][:args.cam_num]:
-            sky_data = np.array(Image.open(os.path.join(args.source_path, subdir, car_id + '.png')))
+            sky_data = np.array(Image.open(os.path.join(args.source_path, subdir, car_id + '.jpg')))
             sky_mask = sky_data>0
             sky_masks.append(sky_mask.astype(np.float32))
 
@@ -160,21 +177,25 @@ def readWaymoInfo(args):
         cam_info.pointcloud_camera[:] *= scale_factor
     pointcloud = (np.pad(pointcloud, ((0, 0), (0, 1)), constant_values=1) @ transform.T)[:, :3]
     if args.eval:
-        # ## for snerf scene
-        # train_cam_infos = [c for idx, c in enumerate(cam_infos) if (idx // cam_num) % testhold != 0]
-        # test_cam_infos = [c for idx, c in enumerate(cam_infos) if (idx // cam_num) % testhold == 0]
+        # 连续块抽帧：每隔 block_interval 帧，取连续 block_size 帧作为测试集
+        # 例如 block_interval=4, block_size=2：测试帧索引为 {4,5,8,9,12,13,...}
+        block_size     = args.block_size
+        block_interval = args.block_interval
+        block_start    = args.block_start
+        test_frame_set = set()
+        start = block_start
+        while start + block_size - 1 < frame_num:
+            for f in range(start, start + block_size):
+                test_frame_set.add(f)
+            start += block_interval
 
-        # for dynamic scene
-        train_cam_infos = [c for idx, c in enumerate(cam_infos) if (idx // args.cam_num + 1) % args.testhold != 0]
-        test_cam_infos = [c for idx, c in enumerate(cam_infos) if (idx // args.cam_num + 1) % args.testhold == 0]
-        
-        # for emernerf comparison [testhold::testhold]
-        if args.testhold == 10:
-            train_cam_infos = [c for idx, c in enumerate(cam_infos) if (idx // args.cam_num) % args.testhold != 0 or (idx // args.cam_num) == 0]
-            test_cam_infos = [c for idx, c in enumerate(cam_infos) if (idx // args.cam_num) % args.testhold == 0 and (idx // args.cam_num)>0]
+        train_cam_infos = [c for idx, c in enumerate(cam_infos) if (idx // args.cam_num) not in test_frame_set]
+        test_cam_infos  = [c for idx, c in enumerate(cam_infos) if (idx // args.cam_num) in test_frame_set]
     else:
         train_cam_infos = cam_infos
         test_cam_infos = []
+
+    all_cam_infos = cam_infos
 
     nerf_normalization = getNerfppNorm(train_cam_infos)
     nerf_normalization['radius'] = 1/nerf_normalization['radius']
@@ -194,6 +215,7 @@ def readWaymoInfo(args):
     scene_info = SceneInfo(point_cloud=pcd,
                            train_cameras=train_cam_infos,
                            test_cameras=test_cam_infos,
+                           all_cameras=all_cam_infos,
                            nerf_normalization=nerf_normalization,
                            ply_path=ply_path,
                            time_interval=time_interval,

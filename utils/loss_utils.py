@@ -67,3 +67,6 @@ def tv_loss(depth):
     h_tv = torch.square(depth[..., 1:, :] - depth[..., :h-1, :]).sum()
     w_tv = torch.square(depth[..., :, 1:] - depth[..., :, :w-1]).sum()
     return 2 * (h_tv / count_h + w_tv / count_w)
+
+
+

@@ -562,6 +562,8 @@ def readKittiMotInfo(args):
     poses[..., :3, 3] *= scale_factor
 
     c2ws = poses
+    total_cam_num = len(c2ws)
+    num_frame = total_cam_num // 2  # KITTI 2路相机，每路 num_frame 帧
     for idx in tqdm(range(len(c2ws)), desc="Loading data"):
         c2w = c2ws[idx]
         w2c = np.linalg.inv(c2w)
@@ -585,11 +587,18 @@ def readKittiMotInfo(args):
             points.append(point_xyz_world)
             point_time = np.full_like(point_xyz_world[:, :1], timestamp)
             points_time.append(point_time)
-        frame_num = len(c2ws) // 2
-        point_xyz = points[idx%frame_num]
+        point_xyz = points[idx % num_frame]
         point_camera = (np.pad(point_xyz, ((0, 0), (0, 1)), constant_values=1)@ transform_matrix.T @ w2c.T)[:, :3]*scale_factor
 
-        cam_infos.append(CameraInfo(uid=idx, R=R, T=T,
+        # colmap_id：KITTI 2路相机，stride=2（与 Waymo uid=idx*5+j 的做法完全一致）
+        # cam02: frame_idx * 2 + 0；cam03: frame_idx * 2 + 1
+        # CameraInfo 是 namedtuple，不支持事后赋值，必须在构造时通过 uid 传入
+        CAM_STRIDE_KITTI = 2
+        frame_idx = idx % num_frame
+        cam_idx   = idx // num_frame   # 0=cam02, 1=cam03
+        colmap_id = frame_idx * CAM_STRIDE_KITTI + cam_idx
+
+        cam_infos.append(CameraInfo(uid=colmap_id, R=R, T=T,
                                     image=image,
                                     image_path=image_filenames[idx], image_name=image_filenames[idx],
                                     width=W, height=H, timestamp=timestamp,
@@ -625,13 +634,41 @@ def readKittiMotInfo(args):
         cam_info.pointcloud_camera[:] *= scale_factor
     pointcloud = (np.pad(pointcloud, ((0, 0), (0, 1)), constant_values=1) @ transform.T)[:, :3]
 
+    # 与 waymo_loader.py 保持一致：使用连续 block 采样划分测试集
+    # 参数从 args 读取（block_start / block_size / block_interval），默认值对齐 Waymo
+    num_frame = len(cam_infos) // 2  # KITTI 2路相机，总 cam_infos = 2 * frame_num
     if args.eval:
-        num_frame = len(cam_infos)//2
-        train_cam_infos = [c for idx, c in enumerate(cam_infos) if (idx % num_frame + 1) % args.testhold != 0]
-        test_cam_infos = [c for idx, c in enumerate(cam_infos) if (idx % num_frame + 1) % args.testhold == 0]
+        block_start    = getattr(args, 'block_start',    8)
+        block_size     = getattr(args, 'block_size',     4)
+        block_interval = getattr(args, 'block_interval', 10)
+
+        # 生成测试帧索引集合（帧级，非相机级）
+        test_frame_set = set()
+        start = block_start
+        while start + block_size - 1 < num_frame:
+            for f in range(start, start + block_size):
+                test_frame_set.add(f)
+            start += block_interval
+
+        # KITTI cam_infos 排列：[cam02_frame0, cam02_frame1, ..., cam02_frameN-1,
+        #                         cam03_frame0, cam03_frame1, ..., cam03_frameN-1]
+        # idx < num_frame → cam02；idx >= num_frame → cam03
+        train_cam_infos = [c for idx, c in enumerate(cam_infos)
+                           if (idx % num_frame) not in test_frame_set]
+        test_cam_infos  = [c for idx, c in enumerate(cam_infos)
+                           if (idx % num_frame) in test_frame_set]
+
+        num_test_frames  = len(test_cam_infos)  // 2
+        num_train_frames = len(train_cam_infos) // 2
+
+        print(f"[KITTI Data Split] block_start={block_start}, block_size={block_size}, block_interval={block_interval}")
+        print(f"  Total frames: {num_frame}")
+        print(f"  Train frames: {num_train_frames} ({num_train_frames*100//num_frame}%)")
+        print(f"  Test  frames: {num_test_frames}  ({num_test_frames*100//num_frame}%)")
+        print(f"  Train cameras: {len(train_cam_infos)},  Test cameras: {len(test_cam_infos)}")
     else:
         train_cam_infos = cam_infos
-        test_cam_infos = []
+        test_cam_infos  = []
 
     # for kitti have some static ego videos, we dont calculate radius here
     nerf_normalization = getNerfppNorm(train_cam_infos)
@@ -646,12 +683,12 @@ def readKittiMotInfo(args):
     except:
         pcd = None
 
-    time_interval = (time_duration[1] - time_duration[0]) / (frame_num - 1)
-
+    time_interval = (time_duration[1] - time_duration[0]) / (num_frame - 1)
 
     scene_info = SceneInfo(point_cloud=pcd,
                            train_cameras=train_cam_infos,
                            test_cameras=test_cam_infos,
+                           all_cameras=cam_infos,        # 供 getPseudoCameras / all_cameras 使用
                            nerf_normalization=nerf_normalization,
                            ply_path=ply_path,
                            time_interval=time_interval)

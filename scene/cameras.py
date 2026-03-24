@@ -24,7 +24,7 @@ class Camera(nn.Module):
                  image_name=None, uid=0,
                  trans=np.array([0.0, 0.0, 0.0]), scale=1.0, data_device="cuda", timestamp=0.0, 
                  resolution=None, image_path=None,
-                 pts_depth=None, sky_mask=None
+                 pts_depth=None, sky_mask=None, image_full_scale=None
                  ):
         super(Camera, self).__init__()
 
@@ -49,7 +49,7 @@ class Camera(nn.Module):
             print(e)
             print(f"[Warning] Custom device {data_device} failed, fallback to default cuda device")
             self.data_device = torch.device("cuda")
-
+        self.image_full_scale = image_full_scale.clamp(0.0, 1.0)
         self.original_image = image.clamp(0.0, 1.0).to(self.data_device)
         self.sky_mask = sky_mask.to(self.data_device) > 0 if sky_mask is not None else sky_mask
         self.pts_depth = pts_depth.to(self.data_device) if pts_depth is not None else pts_depth

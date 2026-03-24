@@ -19,12 +19,16 @@ from utils.sh_utils import eval_sh
 
 def render(viewpoint_camera: Camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, scaling_modifier=1.0,
            override_color=None, env_map=None,
-           time_shift=None, other=[], mask=None, is_training=False):
+           time_shift=None, other=[], mask=None, is_training=False, compute_grad_cov2d=True, wv_pose= None):
     """
     Render the scene. 
     
     Background tensor (bg_color) must be on GPU!
     """
+
+
+    if wv_pose == None:
+        wv_pose = viewpoint_camera.world_view_transform
     # Create zero tensor. We will use it to make pytorch return gradients of the 2D (screen-space) means
     screenspace_points = torch.zeros_like(pc.get_xyz, dtype=pc.get_xyz.dtype, requires_grad=True, device="cuda") + 0
     try:
@@ -40,7 +44,8 @@ def render(viewpoint_camera: Camera, pc: GaussianModel, pipe, bg_color: torch.Te
     else:
         tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
         tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
-    
+
+
     raster_settings = GaussianRasterizationSettings(
         image_height=int(viewpoint_camera.image_height),
         image_width=int(viewpoint_camera.image_width),
@@ -48,13 +53,15 @@ def render(viewpoint_camera: Camera, pc: GaussianModel, pipe, bg_color: torch.Te
         tanfovy=tanfovy,
         bg=bg_color if env_map is not None else torch.zeros(3, device="cuda"),
         scale_modifier=scaling_modifier,
-        viewmatrix=viewpoint_camera.world_view_transform,
+        viewmatrix=wv_pose,
         projmatrix=viewpoint_camera.full_proj_transform,
         sh_degree=pc.active_sh_degree,
         campos=viewpoint_camera.camera_center,
         prefiltered=False,
         debug=pipe.debug
-    )
+        #compute_grad_cov2d=compute_grad_cov2d,
+        #proj_k=viewpoint_camera.projection_matrix
+    )    
 
     rasterizer = GaussianRasterizer(raster_settings=raster_settings)
 
@@ -112,7 +119,7 @@ def render(viewpoint_camera: Camera, pc: GaussianModel, pipe, bg_color: torch.Te
         mask = mask & (marginal_t[:, 0] > 0.05)
     masked_means3D = means3D[mask]
     masked_xyz_homo = torch.cat([masked_means3D, torch.ones_like(masked_means3D[:, :1])], dim=1)
-    masked_depth = (masked_xyz_homo @ viewpoint_camera.world_view_transform[:, 2:3])
+    masked_depth = (masked_xyz_homo @ wv_pose[:, 2:3])
     depth_alpha = torch.zeros(means3D.shape[0], 2, dtype=torch.float32, device=means3D.device)
     depth_alpha[mask] = torch.cat([
         masked_depth,
@@ -131,7 +138,11 @@ def render(viewpoint_camera: Camera, pc: GaussianModel, pipe, bg_color: torch.Te
         scales = scales,
         rotations = rotations,
         cov3D_precomp = cov3D_precomp,
-        mask = mask)
+        mask = mask
+        #camera_center = viewpoint_camera.camera_center,
+        #camera_pose = wv_pose
+        )
+
     
     rendered_other, rendered_depth, rendered_opacity = rendered_feature.split([S_other, 1, 1], dim=0)
     rendered_image_before = rendered_image
