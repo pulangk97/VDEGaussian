@@ -54,7 +54,7 @@ for scene_idx, scene_id in enumerate(scene_ids):
     for tag in tags:
         os.makedirs(join(scene_dir, tag), exist_ok=True)
     for post, tag in zip(posts,tags):
-        for i in tqdm(range(scene_nums[scene_idx][0], scene_nums[scene_idx][1])):
+        for i in tqdm(range(scene_nums[scene_idx][0], scene_nums[scene_idx][1] + 1)):
             cmd = "cp {} {}".format(join(data_root,tag,f'{scene_id:04d}{i:03d}'+post), 
                                     join(scene_dir, tag, f'{scene_id:04d}{i:03d}'+post))
             os.system(cmd)
